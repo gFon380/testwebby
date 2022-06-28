@@ -1,11 +1,10 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getDatabase, set, ref, get, push, onValue } from "firebase/database";
+import { getDatabase, set, ref, get, push, onValue, connectDatabaseEmulator } from "firebase/database";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
 const firebaseConfig = {
   apiKey: "AIzaSyAA1CRWUuPdO2b_M5VkhzZFSdb2MIkfC0k",
   authDomain: "test-project-d468e.firebaseapp.com",
@@ -17,10 +16,15 @@ const firebaseConfig = {
   measurementId: "G-25M0S0DPCV"
 };
 
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
+if (location.hostname === "localhost") {
+  // Point to the RTDB emulator running on localhost.
+  connectDatabaseEmulator(db, "localhost", 9000);
+}
 
 const msgSend = document.querySelector(".messageSend");
 
@@ -48,14 +52,20 @@ function renderArray() {
 }
 function sendMessage(e) {
 
+  const currentDate = new Date();
+
+  console.log(currentDate);
+
   e.preventDefault();
 
   console.log(msgInput.value);
 
-  let postCount;
   let msgVal = msgInput.value;
 
-  push(msgRef, msgVal);
+  push(msgRef, {
+    message : msgVal,
+    date : Date.now()
+  });
 
   msgInput.value = '';
 }
@@ -64,8 +74,10 @@ onValue(msgRef, (snapshot) => {
   messages = [];
   console.log("msgRef: " + snapshot.val());
   snapshot.forEach((childSnapshot) => {
-    let childVal = childSnapshot.val();
-    messages.push(childVal);
+    let msgVal = childSnapshot.child('message').val();
+    let localDateValue = childSnapshot.child('date').val();
+    let localDate = new Date(localDateValue);
+    messages.push(localDate.toLocaleString() + ": " + msgVal);
   })
   
   console.log(messages.length);
